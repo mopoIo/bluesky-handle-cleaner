@@ -4,8 +4,10 @@
 // @version      1.0
 // @description  Removes the ".bsky.social" part from handles visually while preserving functionality
 // @author       mopolo
-// @match        *.bsky.app*
-// @match        *.bsky.dev*
+// @match        https://*.bsky.app/*
+// @match        https://*.bsky.dev/*
+// @match        https://bsky.app/*
+// @match        https://bsky.dev/*
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -21,8 +23,11 @@
         }
 
         const originalText = node.nodeValue;
-        // Replace handles but keep a non-breaking space for clarity
-        const newText = originalText.replace(/(@[\w-]+)\.bsky\.social/g, '$1\u00A0');
+        // Match both .bsky.social and other potential domains like .bsky.dev
+        const newText = originalText
+            .replace(/(@[\w-]+)\.bsky\.social/g, '$1\u00A0')
+            .replace(/(@[\w-]+)\.bsky\.dev/g, '$1\u00A0')
+            .replace(/(@[\w-]+)\.bsky\.app/g, '$1\u00A0');
         if (originalText !== newText) {
             node.nodeValue = newText;
         }
@@ -78,17 +83,25 @@
     // Run our functions when the page is loaded
     function init() {
         console.log('BlueSky Handle Cleaner: Script started');
+        // Initial processing might need to wait for dynamic content to load
         processExistingNodes();
+        // Set up observer to catch new content
         observeDOMChanges();
+        // Run additional passes to catch any dynamically loaded content
+        setTimeout(processExistingNodes, 1500);
+        setTimeout(processExistingNodes, 3000);
     }
 
-    // If the document is already loaded, initialize the script
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(init, 1000); // Small delay to make sure the page is fully loaded
+    // Ensure script runs regardless of how the page is loaded
+    if (document.readyState === 'complete') {
+        // Page is already loaded
+        init();
     } else {
-        // Otherwise wait for page to load
+        // Wait for page to load
+        window.addEventListener('load', init);
+        // Also try with DOMContentLoaded as backup
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(init, 1000);
+            setTimeout(init, 500);
         });
     }
 })();
